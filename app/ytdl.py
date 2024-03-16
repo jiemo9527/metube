@@ -111,6 +111,20 @@ class Download:
         except yt_dlp.utils.YoutubeDLError as exc:
             self.status_queue.put({'status': 'error', 'msg': str(exc)})
 
+        async def start(self, notifier):
+
+            if Download.manager is None:
+                Download.manager = multiprocessing.Manager()
+        self.status_queue = Download.manager.Queue()
+        self.proc = multiprocessing.Process(target=self._download)
+        self.proc.start()
+        self.loop = asyncio.get_running_loop()
+        self.notifier = notifier
+        self.info.status = 'preparing'
+        await self.notifier.updated(self.info)
+        asyncio.create_task(self.update_status())
+        return await self.loop.run_in_executor(None, self.proc.join)
+
 
 def upload_to_rclone(self, filename):
     import subprocess
@@ -121,19 +135,6 @@ def upload_to_rclone(self, filename):
         print(f"Successfully uploaded {filename} to {remote_path}")
     except subprocess.CalledProcessError as e:
         print(f"Error uploading {filename} to {remote_path}: {e}")
-
-    async def start(self, notifier):
-        if Download.manager is None:
-            Download.manager = multiprocessing.Manager()
-        self.status_queue = Download.manager.Queue()
-        self.proc = multiprocessing.Process(target=self._download)
-        self.proc.start()
-        self.loop = asyncio.get_running_loop()
-        self.notifier = notifier
-        self.info.status = 'preparing'
-        await self.notifier.updated(self.info)
-        asyncio.create_task(self.update_status())
-        return await self.loop.run_in_executor(None, self.proc.join)
 
     def cancel(self):
         if self.running():
@@ -261,7 +262,7 @@ class DownloadQueue:
         """
         # Keep consistent with frontend
         base_directory = self.config.DOWNLOAD_DIR if (
-                    quality != 'audio' and format not in AUDIO_FORMATS) else self.config.AUDIO_DOWNLOAD_DIR
+                quality != 'audio' and format not in AUDIO_FORMATS) else self.config.AUDIO_DOWNLOAD_DIR
         if folder:
             if not self.config.CUSTOM_DIRS:
                 return None, {'status': 'error',
