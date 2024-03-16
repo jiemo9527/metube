@@ -63,42 +63,59 @@ class Download:
 
 
     def _download(self):
-        try:
-            def put_status(st):
-                self.status_queue.put({k: v for k, v in st.items() if k in (
-                    'tmpfilename',
-                    'filename',
-                    'status',
-                    'msg',
-                    'total_bytes',
-                    'total_bytes_estimate',
-                    'downloaded_bytes',
-                    'speed',
-                    'eta',
-                )})
-            def put_status_postprocessor(d):
-                if d['postprocessor'] == 'MoveFiles' and d['status'] == 'finished':
-                    if '__finaldir' in d['info_dict']:
-                        filename = os.path.join(d['info_dict']['__finaldir'], os.path.basename(d['info_dict']['filepath']))
-                    else:
-                        filename = d['info_dict']['filepath']
-                    self.status_queue.put({'status': 'finished', 'filename': filename})
-            ret = yt_dlp.YoutubeDL(params={
-                'quiet': True,
-                'no_color': True,
-                #'skip_download': True,
-                'paths': {"home": self.download_dir, "temp": self.temp_dir},
-                'outtmpl': { "default": self.output_template, "chapter": self.output_template_chapter },
-                'format': self.format,
-                'socket_timeout': 30,
-                'ignore_no_formats_error': True,
-                'progress_hooks': [put_status],
-                'postprocessor_hooks': [put_status_postprocessor],
-                **self.ytdl_opts,
-            }).download([self.info.url])
-            self.status_queue.put({'status': 'finished' if ret == 0 else 'error'})
-        except yt_dlp.utils.YoutubeDLError as exc:
-            self.status_queue.put({'status': 'error', 'msg': str(exc)})
+    try:
+        def put_status(st):
+            self.status_queue.put({k: v for k, v in st.items() if k in (
+                'tmpfilename',
+                'filename',
+                'status',
+                'msg',
+                'total_bytes',
+                'total_bytes_estimate',
+                'downloaded_bytes',
+                'speed',
+                'eta',
+            )})
+        
+        def put_status_postprocessor(d):
+            if d['postprocessor'] == 'MoveFiles' and d['status'] == 'finished':
+                if '__finaldir' in d['info_dict']:
+                    filename = os.path.join(d['info_dict']['__finaldir'], os.path.basename(d['info_dict']['filepath']))
+                else:
+                    filename = d['info_dict']['filepath']
+                self.status_queue.put({'status': 'finished', 'filename': filename})
+                # Upload to rclone here
+                self.upload_to_rclone(filename)
+        
+        ret = yt_dlp.YoutubeDL(params={
+            'quiet': True,
+            'no_color': True,
+            #'skip_download': True,
+            'paths': {"home": self.download_dir, "temp": self.temp_dir},
+            'outtmpl': { "default": self.output_template, "chapter": self.output_template_chapter },
+            'format': self.format,
+            'socket_timeout': 30,
+            'ignore_no_formats_error': True,
+            'progress_hooks': [put_status],
+            'postprocessor_hooks': [put_status_postprocessor],
+            **self.ytdl_opts,
+        }).download([self.info.url])
+        
+        self.status_queue.put({'status': 'finished' if ret == 0 else 'error'})
+    
+    except yt_dlp.utils.YoutubeDLError as exc:
+        self.status_queue.put({'status': 'error', 'msg': str(exc)})
+
+def upload_to_rclone(self, filename):
+    import subprocess
+    remote_path = 'od2024: '  # Update with your rclone remote and path
+    cmd = f'rclone copy "{filename}" "{remote_path}"'
+    try:
+        subprocess.run(cmd, shell=True, check=True)
+        print(f"Successfully uploaded {filename} to {remote_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error uploading {filename} to {remote_path}: {e}")
+
 
     async def start(self, notifier):
         if Download.manager is None:
