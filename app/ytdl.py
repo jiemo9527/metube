@@ -90,7 +90,7 @@ class Download:
                         filename = d['info_dict']['filepath']
                     self.status_queue.put({'status': 'finished', 'filename': filename})
                     # Upload to rclone here
-                    self.upload_to_rclone(filename)
+                    self.upload_to_rclone(d['info_dict']['filepath'])
 
             ret = yt_dlp.YoutubeDL(params={
                 'quiet': True,
@@ -128,8 +128,8 @@ class Download:
 
     def upload_to_rclone(self, filename):
         import subprocess
-        remote_path = 'od2024: '  # Update with your rclone remote and path
-        cmd = f'rclone copy "{filename}" "{remote_path}"'
+        remote_path = '2024: '  # Update with your rclone remote and path
+        cmd = f'rclone move "{filename}" "{remote_path}"'
         try:
             subprocess.run(cmd, shell=True, check=True)
             print(f"Successfully uploaded {filename} to {remote_path}")
