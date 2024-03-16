@@ -111,10 +111,10 @@ class Download:
         except yt_dlp.utils.YoutubeDLError as exc:
             self.status_queue.put({'status': 'error', 'msg': str(exc)})
 
-        async def start(self, notifier):
+    async def start(self, notifier):
 
-            if Download.manager is None:
-                Download.manager = multiprocessing.Manager()
+        if Download.manager is None:
+            Download.manager = multiprocessing.Manager()
         self.status_queue = Download.manager.Queue()
         self.proc = multiprocessing.Process(target=self._download)
         self.proc.start()
@@ -126,15 +126,15 @@ class Download:
         return await self.loop.run_in_executor(None, self.proc.join)
 
 
-def upload_to_rclone(self, filename):
-    import subprocess
-    remote_path = 'remote:path/to/upload'  # Update with your rclone remote and path
-    cmd = f'rclone copy "{filename}" "{remote_path}"'
-    try:
-        subprocess.run(cmd, shell=True, check=True)
-        print(f"Successfully uploaded {filename} to {remote_path}")
-    except subprocess.CalledProcessError as e:
-        print(f"Error uploading {filename} to {remote_path}: {e}")
+    def upload_to_rclone(self, filename):
+        import subprocess
+        remote_path = 'remote:path/to/upload'  # Update with your rclone remote and path
+        cmd = f'rclone copy "{filename}" "{remote_path}"'
+        try:
+            subprocess.run(cmd, shell=True, check=True)
+            print(f"Successfully uploaded {filename} to {remote_path}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error uploading {filename} to {remote_path}: {e}")
 
     def cancel(self):
         if self.running():
