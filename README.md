@@ -1,7 +1,8 @@
 ## 差异
+```bash
 docker push wanxve0000/guiyt:latest
 docker run --name guiyt -v /usr/bin/rclone:/usr/bin/rclone -v /root/.config/rclone/rclone.conf:/home/rclone.conf -d -p 8081:8081 -v /downloads:/downloads wanxve0000/guiyt:latest 
-
+```
 # MeTube
 
 ![Build Status](https://github.com/alexta69/metube/actions/workflows/main.yml/badge.svg)
