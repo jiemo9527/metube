@@ -1,4 +1,5 @@
-## 差异
+## 差异:穿越rclone+自动上传
+### （配置ytdl.py line:131）
 ```bash
 docker push wanxve0000/guiyt:latest
 docker run --name guiyt -v /usr/bin/rclone:/usr/bin/rclone -v /root/.config/rclone/rclone.conf:/home/rclone.conf -d -p 8081:8081 -v /downloads:/downloads wanxve0000/guiyt:latest 
