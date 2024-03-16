@@ -128,7 +128,7 @@ class Download:
 
     def upload_to_rclone(self, filename):
         import subprocess
-        remote_path = '2024: '  # Update with your rclone remote and path
+        remote_path = '2024:/'  # Update with your rclone remote and path
         cmd = f'rclone move "{filename}" "{remote_path}"'
         try:
             subprocess.run(cmd, shell=True, check=True)
